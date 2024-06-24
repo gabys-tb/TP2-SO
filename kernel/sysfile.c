@@ -16,6 +16,29 @@
 #include "file.h"
 #include "fcntl.h"
 
+//
+
+// setar o numero de tickets para um processo 
+int
+sys_settickets(void)
+{
+  int num_tickets;
+
+  argint(0, &num_tickets);
+  
+  if (num_tickets < 1)
+      
+      return -1;
+ 
+  
+  struct proc *p = myproc();
+  printf("ticket antes: %d\n", p->tickets);
+  p->tickets += num_tickets;
+  printf("ticket atualizado: %d\n", p->tickets);
+  return 0;
+}
+
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
