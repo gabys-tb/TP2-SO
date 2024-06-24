@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+//#include "rand.h"
 
 struct cpu cpus[NCPU];
 
@@ -25,6 +26,8 @@ extern char trampoline[]; // trampoline.S
 // memory model when using p->parent.
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
+
+static unsigned long next = 1;
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -435,6 +438,22 @@ wait(uint64 addr)
   }
 }
 
+void srandom(unsigned long seed) {
+  next = seed;
+}
+
+long random(void) {
+  next = next * 1103515245 + 12345;
+  return (unsigned int)(next / 65536) % 32768;
+}
+
+
+int random_number(uint total_procs){
+  //srandom(time(NULL));   // inicialização
+  printf("%d \n", random);
+  return random() % total_procs;
+}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -448,7 +467,39 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   
+  int total_tickets = 0; int tickets = 0;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    if(p->state == RUNNABLE) {
+      tickets = p->tickets;
+      total_tickets += tickets;
+    }
+  } 
   c->proc = 0;
+
+  int picked = random_number(total_tickets);
+  printf("numero aleatorio %d", picked);
+  for(;;){
+    // Avoid deadlock by ensuring that devices can interrupt.
+    intr_on();
+
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        if (p->tickets >= picked){
+          p->state = RUNNING;
+          c->proc = p;
+          swtch(&c->context, &p->context);
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+        }
+      }
+      release(&p->lock);
+    } 
+  }
+
+/*
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
@@ -468,8 +519,9 @@ scheduler(void)
         c->proc = 0;
       }
       release(&p->lock);
-    }
-  }
+    } 
+  } */
+
 }
 
 // Switch to scheduler.  Must hold only p->lock

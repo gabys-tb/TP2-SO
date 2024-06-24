@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+//#include "rand.h"
 
 volatile static int started = 0;
 
@@ -10,6 +11,7 @@ volatile static int started = 0;
 void
 main()
 {
+  srandom(42);
   if(cpuid() == 0){
     consoleinit();
     printfinit();
