@@ -1,55 +1,30 @@
+#include "kernel/param.h"
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
+#include "kernel/syscall.h"
+#include "kernel/memlayout.h"
+#include "kernel/riscv.h"
 
-void spin() {
-  volatile int i;
-  for(i = 0; i < 1000000; i++); // Reduzido o número de iterações
-}
 
-int main(int argc, char *argv[]) {
+int
+main(void)
+{
   int pid;
-  int iterations = 10; // Definir o número de iterações
+  //struct proc *p = myproc();
 
-  printf("fork and exec test\n");
+  settickets(42);  // Configurar o atributo no processo pai
 
-  pid = fork();
-  if (pid < 0) {
-    printf("fork failed\n");
-    exit(1);
-  }
-  if (pid == 0) {
-    printf("I am the child process\n");
-    for (int i = 0; i < iterations; i++) {
-      spin();
-      printf("Child 1 - Iteration %d\n", i+1);
-    }
-    exit(1);
+  if ((pid = fork()) == 0) {
+    // Código do processo filho
+    exit(0);
   } else {
-    printf("I am the parent process, child pid: %d\n", pid);
-    wait(0);  // Espera o filho terminar
+    // Código do processo pai
+    wait(0);
   }
 
-  if (fork() == 0) {
-    settickets(10);
-    for (int i = 0; i < iterations; i++) {
-      spin();
-      printf("Child 2 - Iteration %d\n", i+1);
-    }
-    exit(1);
-  }
-
-  if (fork() == 0) {
-    settickets(20);
-    for (int i = 0; i < iterations; i++) {
-      spin();
-      printf("Child 3 - Iteration %d\n", i+1);
-    }
-    exit(1);
-  }
-
-  while (wait(0) > 0);  // Espera todos os filhos terminarem
-  exit(1);
+  exit(0);
 }
+

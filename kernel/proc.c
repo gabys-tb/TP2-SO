@@ -301,6 +301,7 @@ fork(void)
   np->sz = p->sz;
 
   np->tickets = p->tickets;
+  printf("Atributo herdado: %d\n", np->tickets);
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
