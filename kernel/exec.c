@@ -31,6 +31,8 @@ exec(char *path, char **argv)
   pagetable_t pagetable = 0, oldpagetable;
   struct proc *p = myproc();
 
+  int old_tickets = p->tickets;
+
   begin_op();
 
   if((ip = namei(path)) == 0){
@@ -120,6 +122,8 @@ exec(char *path, char **argv)
       last = s+1;
   safestrcpy(p->name, last, sizeof(p->name));
     
+
+  p->tickets = old_tickets;
   // Commit to the user image.
   oldpagetable = p->pagetable;
   p->pagetable = pagetable;

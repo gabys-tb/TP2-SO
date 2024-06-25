@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     if(tickets <1){
         printf("Invalid ticket number. Ticket number must be greater than one.\n");
     } else{
-        settickets();
+        settickets(tickets);
         printf("Actual process has been added %d tickets\n", tickets);
     }
     return 0;

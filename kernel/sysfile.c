@@ -18,6 +18,15 @@
 
 //
 
+int
+sys_testsched(void)
+{
+  // Implementação da syscall
+  printf("Test scheduler syscall\n");
+  return 0;
+}
+
+
 // setar o numero de tickets para um processo 
 int
 sys_settickets(void)
@@ -25,12 +34,9 @@ sys_settickets(void)
   int num_tickets;
 
   argint(0, &num_tickets);
-  
   if (num_tickets < 1)
-      
       return -1;
  
-  
   struct proc *p = myproc();
   printf("ticket antes: %d\n", p->tickets);
   p->tickets += num_tickets;

@@ -27,7 +27,7 @@ extern char trampoline[]; // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
-static unsigned long next = 1;
+static int next = 1;
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -300,6 +300,8 @@ fork(void)
   }
   np->sz = p->sz;
 
+  np->tickets = p->tickets;
+
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
@@ -438,20 +440,26 @@ wait(uint64 addr)
   }
 }
 
-void srandom(unsigned long seed) {
+void srandom(int seed) {
   next = seed;
+  printf("semente setada para %d", seed);
 }
 
-long random(void) {
+uint64 random(void) {
+  //printf("next é %d\n", next);
   next = next * 1103515245 + 12345;
-  return (unsigned int)(next / 65536) % 32768;
+  //printf("next atualizado é %d\n", next);
+  return (uint64)(next / 65536) % 32768;
 }
 
 
-int random_number(uint total_procs){
+uint64 random_number(uint64 total_tickets){
   //srandom(time(NULL));   // inicialização
-  printf("%d \n", random);
-  return random() % total_procs;
+  
+  uint64 a = random() % total_tickets;
+  //printf("random retornou %d \n", random());
+  //printf("total de tickets é %d", total_tickets);
+  return a;
 }
 
 // Per-CPU process scheduler.
@@ -467,9 +475,10 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   
+  
   int total_tickets = 0; int tickets = 0;
   for(p = proc; p < &proc[NPROC]; p++) {
-    if(p->state == RUNNABLE) {
+    if(p->state != SLEEPING) {
       tickets = p->tickets;
       total_tickets += tickets;
     }
@@ -477,7 +486,7 @@ scheduler(void)
   c->proc = 0;
 
   int picked = random_number(total_tickets);
-  printf("numero aleatorio %d", picked);
+
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
@@ -485,7 +494,7 @@ scheduler(void)
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
-        if (p->tickets >= picked){
+        if (p->tickets > picked){
           p->state = RUNNING;
           c->proc = p;
           swtch(&c->context, &p->context);
@@ -498,30 +507,6 @@ scheduler(void)
       release(&p->lock);
     } 
   }
-
-/*
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
-
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-      }
-      release(&p->lock);
-    } 
-  } */
-
 }
 
 // Switch to scheduler.  Must hold only p->lock

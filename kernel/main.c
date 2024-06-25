@@ -4,6 +4,7 @@
 #include "riscv.h"
 #include "defs.h"
 //#include "rand.h"
+#include <time.h>
 
 volatile static int started = 0;
 
