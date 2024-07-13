@@ -472,24 +472,16 @@ wait(uint64 addr)
 
 void srandom(int seed) {
   next = seed;
-  printf("semente setada para %d", seed);
 }
 
-uint64 random(void) {
-  //printf("next é %d\n", next);
+int random(void) {
   next = next * 1103515245 + 12345;
-  //printf("next atualizado é %d\n", next);
   return (uint64)(next / 65536) % 32768;
 }
 
 
-uint64 random_number(uint64 total_tickets){
-  //srandom(time(NULL));   // inicialização
-  
-  uint64 a = random() % total_tickets;
-  //printf("random retornou %d \n", random());
-  //printf("total de tickets é %d", total_tickets);
-  return a;
+int random_number(uint64 total_tickets){
+  return  random() % total_tickets + 1;
 }
 
 // Per-CPU process scheduler.
@@ -756,9 +748,9 @@ int settickets(int num)
   if (num < 1) return -1;
 
   struct proc *p = myproc();
-  printf("ticket antes: %d\n", p->tickets);
+  acquire(&p->lock);
   p->tickets = num;
-  printf("ticket atualizado: %d\n", p->tickets);
+  release(&p->lock);
 
   // Modify pstat
   acquire(&pstat_lock);
