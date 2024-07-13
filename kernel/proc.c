@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pstat.h"
 //#include "rand.h"
 
 struct cpu cpus[NCPU];
@@ -13,8 +14,12 @@ struct proc proc[NPROC];
 
 struct proc *initproc;
 
+struct pstat pstat;
+
 int nextpid = 1;
 struct spinlock pid_lock;
+
+struct spinlock pstat_lock;
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
@@ -59,6 +64,20 @@ procinit(void)
       p->state = UNUSED;
       p->kstack = KSTACK((int) (p - proc));
   }
+}
+
+
+void pstat_init(void)
+{
+  initlock(&pstat_lock, "pstat_lock");
+  for(int i = 0; i < NPROC; i++)
+  {
+    pstat.inuse[i] = 0;   // whether this slot of the process table is in use (1 or 0)
+    pstat.tickets[i] = 0; // the number of tickets this process has
+    pstat.pid[i] = -1;     // the PID of each process 
+    pstat.ticks[i] = 0;
+  }
+  
 }
 
 // Must be called with interrupts disabled,
@@ -113,8 +132,9 @@ static struct proc*
 allocproc(void)
 {
   struct proc *p;
+  int i;
 
-  for(p = proc; p < &proc[NPROC]; p++) {
+  for(p = proc, i = 0; p < &proc[NPROC]; p++, i++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
       goto found;
@@ -128,6 +148,16 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->tickets = 1; //adicionado
+  p->p_idx = i; //adicionado
+
+  // Modify pstat
+  acquire(&pstat_lock);
+  pstat.inuse[i] = 1;
+  pstat.pid[i] = p->pid;
+  pstat.tickets[i] = 1;
+  pstat.ticks[i] = 1;
+  release(&pstat_lock);
+
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -299,7 +329,6 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
-
   np->tickets = p->tickets;
   printf("Atributo herdado: %d\n", np->tickets);
 
@@ -719,4 +748,25 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+
+int settickets(int num)
+{  
+  if (num < 1) return -1;
+
+  struct proc *p = myproc();
+  printf("ticket antes: %d\n", p->tickets);
+  p->tickets = num;
+  printf("ticket atualizado: %d\n", p->tickets);
+
+  // Modify pstat
+  acquire(&pstat_lock);
+  int i = p->p_idx;
+  int diff = num - p->tickets;
+  pstat.tickets[i] = num;
+  if(diff > 0) pstat.ticks[i] += diff;
+  release(&pstat_lock);
+
+  return 0;
 }

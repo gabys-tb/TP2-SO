@@ -32,16 +32,9 @@ int
 sys_settickets(void)
 {
   int num_tickets;
-
   argint(0, &num_tickets);
-  if (num_tickets < 1)
-      return -1;
- 
-  struct proc *p = myproc();
-  printf("ticket antes: %d\n", p->tickets);
-  p->tickets += num_tickets;
-  printf("ticket atualizado: %d\n", p->tickets);
-  return 0;
+  
+  return settickets(num_tickets);
 }
 
 
