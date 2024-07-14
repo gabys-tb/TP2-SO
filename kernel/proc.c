@@ -11,8 +11,6 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
-struct pstat pstat;
-
 struct proc *initproc;
 
 int nextpid = 1;
@@ -21,7 +19,6 @@ int alltickets = 0;
 
 
 struct spinlock pid_lock;
-struct spinlock pstat_lock;
 struct spinlock tickets_lock;
 
 extern void forkret(void);
@@ -62,29 +59,13 @@ procinit(void)
   
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
+  initlock(&tickets_lock, "alltickets_lock");
+
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
       p->state = UNUSED;
       p->kstack = KSTACK((int) (p - proc));
   }
-}
-
-// initialize pstat struct
-void
-pstatinit(void)
-{
-  initlock(&pstat_lock, "pstat_lock");
-  initlock(&tickets_lock, "alltickets_lock");
-
-  int i;
-  for(i = 0; i < NPROC; i++)
-  {
-    pstat.inuse[i] = 0;
-    pstat.pid[i] = -1;
-    pstat.tickets[i] = 0;
-    pstat.ticks[i] = 0;
-  }
-
 }
 
 
@@ -784,26 +765,24 @@ settickets(int num)
 int
 getpinfo(struct pstat *ps)
 {
-  
-
 
   struct proc *p;
   int i;
-  acquire(&pstat_lock);
+  acquire(&tickets_lock);
   for(p = proc, i = 0; p < &proc[NPROC]; p++, i++)
   {
     acquire(&p->lock);
     if(p->state != UNUSED){
-      pstat.inuse[i] = 1;
-      pstat.pid[i] = p->pid;
-      pstat.tickets[i] = p->tickets;
-      pstat.ticks[i] = p->ticks;
+      ps->inuse[i] = 1;
+      ps->pid[i] = p->pid;
+      ps->tickets[i] = p->tickets;
+      ps->ticks[i] = p->ticks;
     }
     
-    else pstat.inuse[i] = 0;
+    else ps->inuse[i] = 0;
 
     release(&p->lock);
   }
-  release(&pstat_lock);
+  release(&tickets_lock);
   return 0; 
 }

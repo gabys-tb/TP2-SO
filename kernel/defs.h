@@ -111,7 +111,6 @@ void            srandom(int seed);
 uint64          random(void);
 uint64          random_number(int total_tickets);
 int             settickets(int num);
-void            pstatinit(void);
 int             getpinfo(struct pstat *ps);
 
 // swtch.S
