@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "pstat.h"
 
 
 uint64
@@ -107,11 +108,14 @@ uint64
 sys_getpinfo(void)
 {
   uint64 p;
-  struct pstat *ps;
 
   argaddr(0, &p);
-  printf("p = %d, &p = %d\n", p, &p);
-  ps = (struct pstat *)p;
-  printf("ps = %d, &ps = %d\n", ps, &ps);
-  return getpinfo(ps);
+  struct pstat aux;
+  getpinfo(&aux);
+
+  // Copy the kernel structure to the user space pointer
+    if (copyout(myproc()->pagetable, p, (char *)&aux, sizeof(struct pstat)) < 0)
+        return -1;
+
+    return 0;
 }

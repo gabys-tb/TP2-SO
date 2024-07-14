@@ -13,7 +13,6 @@ main(int argc, char *argv[])
 
   
   struct pstat ps;
-  printf("ps = %d, &ps = %d\n", ps, &ps);
 
   if(getpinfo(&ps) < 0)
   {
