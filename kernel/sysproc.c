@@ -110,6 +110,8 @@ sys_getpinfo(void)
   struct pstat *ps;
 
   argaddr(0, &p);
+  printf("p = %d, &p = %d\n", p, &p);
   ps = (struct pstat *)p;
+  printf("ps = %d, &ps = %d\n", ps, &ps);
   return getpinfo(ps);
 }
