@@ -108,7 +108,10 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 void            srandom(int seed);
 uint64          random(void);
-uint64          random_number(uint64 total_tickets);
+uint64          random_number(int total_tickets);
+int             settickets(int num);
+void            pstatinit(void);
+int             getpinfo(void);
 
 // swtch.S
 void            swtch(struct context*, struct context*);

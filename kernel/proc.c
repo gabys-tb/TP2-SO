@@ -5,16 +5,24 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-//#include "rand.h"
+#include "pstat.h"
 
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
+struct pstat pstat;
+
 struct proc *initproc;
 
 int nextpid = 1;
+
+int alltickets = 0;
+
+
 struct spinlock pid_lock;
+struct spinlock pstat_lock;
+struct spinlock tickets_lock;
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
@@ -60,6 +68,25 @@ procinit(void)
       p->kstack = KSTACK((int) (p - proc));
   }
 }
+
+// initialize pstat struct
+void
+pstatinit(void)
+{
+  initlock(&pstat_lock, "pstat_lock");
+  initlock(&tickets_lock, "alltickets_lock");
+
+  int i;
+  for(i = 0; i < NPROC; i++)
+  {
+    pstat.inuse[i] = 0;
+    pstat.pid[i] = -1;
+    pstat.tickets[i] = 0;
+    pstat.ticks[i] = 0;
+  }
+
+}
+
 
 // Must be called with interrupts disabled,
 // to prevent race with process being moved
@@ -128,6 +155,11 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->tickets = 1; //adicionado
+
+  // Change all tickets
+  acquire(&tickets_lock);
+  alltickets += 1;
+  release(&tickets_lock);
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -454,7 +486,7 @@ uint64 random(void) {
 }
 
 
-uint64 random_number(uint64 total_tickets){
+uint64 random_number(int total_tickets){
   //srandom(time(NULL));   // inicialização
   
   uint64 a = random() % total_tickets;
@@ -477,16 +509,12 @@ scheduler(void)
   struct cpu *c = mycpu();
   
   
-  int total_tickets = 0; int tickets = 0;
-  for(p = proc; p < &proc[NPROC]; p++) {
-    if(p->state != SLEEPING) {
-      tickets = p->tickets;
-      total_tickets += tickets;
-    }
-  } 
+  acquire(&tickets_lock);
+
   c->proc = 0;
 
-  int picked = random_number(total_tickets);
+  long int picked = random_number(alltickets);
+  release(&tickets_lock);
 
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
@@ -497,6 +525,7 @@ scheduler(void)
       if(p->state == RUNNABLE) {
         if (p->tickets > picked){
           p->state = RUNNING;
+          p->ticks += 1;
           c->proc = p;
           swtch(&c->context, &p->context);
 
@@ -590,6 +619,10 @@ sleep(void *chan, struct spinlock *lk)
   p->chan = chan;
   p->state = SLEEPING;
 
+  acquire(&tickets_lock);
+  alltickets -= p->tickets;
+  release(&tickets_lock);
+
   sched();
 
   // Tidy up.
@@ -612,6 +645,12 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
+        
+        acquire(&tickets_lock);
+        alltickets += p->tickets;
+        release(&tickets_lock);
+
+        
       }
       release(&p->lock);
     }
@@ -719,4 +758,31 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+
+int
+settickets(int num)
+{
+  if (num < 1) return -1;
+
+  struct proc *p = myproc();
+  
+  acquire(&p->lock);
+  int diff = num - p->tickets;
+  p->tickets = num;
+
+  acquire(&tickets_lock);
+  alltickets += diff;
+  release(&tickets_lock);
+
+  release(&p->lock);
+  
+  return 0;
+}
+
+int
+getpinfo(void)
+{
+  return 0;
 }

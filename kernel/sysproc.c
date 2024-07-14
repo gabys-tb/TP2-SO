@@ -90,3 +90,21 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// setar o numero de tickets para um processo 
+uint64
+sys_settickets(void)
+{
+  int num_tickets;
+
+  argint(0, &num_tickets);
+  return settickets(num_tickets);
+}
+
+
+// Get information about the running processes
+uint64
+sys_getpinfo(void)
+{
+  return getpinfo();
+}
