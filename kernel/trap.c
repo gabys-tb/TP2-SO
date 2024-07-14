@@ -163,11 +163,8 @@ kerneltrap()
 void
 clockintr()
 {
-  struct proc *p = myproc();
-
   acquire(&tickslock);
   ticks++;
-  p->ticks = ticks;
   wakeup(&ticks);
   release(&tickslock);
 }

@@ -15,8 +15,6 @@ struct pstat pstat;
 
 struct proc *initproc;
 
-struct pstat pstat;
-
 int nextpid = 1;
 
 int alltickets = 0;
@@ -142,9 +140,8 @@ static struct proc*
 allocproc(void)
 {
   struct proc *p;
-  int i;
 
-  for(p = proc, i = 0; p < &proc[NPROC]; p++, i++) {
+  for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
       goto found;
@@ -334,6 +331,7 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+
   np->tickets = p->tickets;
   printf("Atributo herdado: %d\n", np->tickets);
 
@@ -477,10 +475,13 @@ wait(uint64 addr)
 
 void srandom(int seed) {
   next = seed;
+  printf("semente setada para %d", seed);
 }
 
-int random(void) {
+uint64 random(void) {
+  //printf("next é %d\n", next);
   next = next * 1103515245 + 12345;
+  //printf("next atualizado é %d\n", next);
   return (uint64)(next / 65536) % 32768;
 }
 
