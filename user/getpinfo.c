@@ -8,11 +8,11 @@ main(int argc, char *argv[])
 {
   if(argc > 1){
     fprintf(2, "Usage: getpinfo\n");
-    exit(1);
+    return 0;
   }
 
   
-  struct pstat *ps;
+  struct pstat *ps = {0};
   if(getpinfo(ps) < 0)
   {
     fprintf(2, "getpinfo failed\n");

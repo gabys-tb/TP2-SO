@@ -752,12 +752,11 @@ settickets(int num)
   acquire(&p->lock);
   int diff = num - p->tickets;
   p->tickets = num;
-
+  release(&p->lock);
+  
   acquire(&tickets_lock);
   alltickets += diff;
   release(&tickets_lock);
-
-  release(&p->lock);
   
   return 0;
 }

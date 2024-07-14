@@ -37,4 +37,5 @@ entry("sbrk");
 entry("sleep");
 entry("uptime");
 entry("settickets"); 
-entry("testsched")
+entry("testsched");
+entry("getpinfo")
