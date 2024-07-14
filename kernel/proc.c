@@ -782,7 +782,28 @@ settickets(int num)
 }
 
 int
-getpinfo(void)
+getpinfo(struct pstat *ps)
 {
-  return 0;
+  
+
+
+  struct proc *p;
+  int i;
+  acquire(&pstat_lock);
+  for(p = proc, i = 0; p < &proc[NPROC]; p++, i++)
+  {
+    acquire(&p->lock);
+    if(p->state != UNUSED){
+      pstat.inuse[i] = 1;
+      pstat.pid[i] = p->pid;
+      pstat.tickets[i] = p->tickets;
+      pstat.ticks[i] = p->ticks;
+    }
+    
+    else pstat.inuse[i] = 0;
+
+    release(&p->lock);
+  }
+  release(&pstat_lock);
+  return 0; 
 }

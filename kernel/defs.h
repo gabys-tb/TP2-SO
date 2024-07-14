@@ -8,6 +8,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct pstat;
 
 // bio.c
 void            binit(void);
@@ -111,7 +112,7 @@ uint64          random(void);
 uint64          random_number(int total_tickets);
 int             settickets(int num);
 void            pstatinit(void);
-int             getpinfo(void);
+int             getpinfo(struct pstat *ps);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
