@@ -459,18 +459,18 @@ void srandom(int seed) {
   printf("semente setada para %d", seed);
 }
 
-uint64 random(void) {
+int random(void) {
   //printf("next é %d\n", next);
   next = next * 1103515245 + 12345;
   //printf("next atualizado é %d\n", next);
-  return (uint64)(next / 65536) % 32768;
+  return (next / 65536) % 32768;
 }
 
 
-uint64 random_number(int total_tickets){
+int random_number(int total_tickets){
   //srandom(time(NULL));   // inicialização
   
-  uint64 a = random() % total_tickets;
+  int a = random() % total_tickets;
   //printf("random retornou %d \n", random());
   //printf("total de tickets é %d", total_tickets);
   return a;

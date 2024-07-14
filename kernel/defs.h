@@ -108,8 +108,8 @@ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 void            srandom(int seed);
-uint64          random(void);
-uint64          random_number(int total_tickets);
+int             random(void);
+int             random_number(int total_tickets);
 int             settickets(int num);
 int             getpinfo(struct pstat *ps);
 
