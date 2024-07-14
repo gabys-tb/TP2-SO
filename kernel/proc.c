@@ -148,6 +148,7 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->tickets = 1; //adicionado
+  p->ticks = 0; // adicionado
   p->p_idx = i; //adicionado
 
   // Modify pstat
