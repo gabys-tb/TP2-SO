@@ -47,15 +47,12 @@ int main(void)
   if ((pid1 = fork()) == 0) {
     // Primeiro processo filho
     settickets(5); // Atribui 5 tickets
-    
   }
 
   if ((pid2 = fork()) == 0) {
     // Segundo processo filho
     settickets(10); // Atribui 10 tickets
-   
   }
-
   if ((pid3 = fork()) == 0) {
     // Terceiro processo filho
     settickets(15); // Atribui 15 tickets
@@ -63,7 +60,7 @@ int main(void)
   }
 
   // Processo pai continua a imprimir estatísticas periodicamente
-  for (int i = 0; i < 50; i++) { // Ajuste o número de iterações conforme necessário
+  for (int i = 0; i < 50; i++) { 
     print_stats();
     sleep(15); // Aguarda um pouco antes de coletar estatísticas novamente
   }

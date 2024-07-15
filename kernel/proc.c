@@ -765,7 +765,6 @@ settickets(int num)
   
   acquire(&tickets_lock);
   alltickets += diff;
-  printf("SET TICKETS MUDOU ALLTICKETS %d\n", alltickets);
   release(&tickets_lock);
   
   return 0;
