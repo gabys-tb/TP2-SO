@@ -114,8 +114,8 @@ sys_getpinfo(void)
   getpinfo(&aux);
 
   // Copy the kernel structure to the user space pointer
-    if (copyout(myproc()->pagetable, p, (char *)&aux, sizeof(struct pstat)) < 0)
-        return -1;
+  if (copyout(myproc()->pagetable, p, (char *)&aux, sizeof(struct pstat)) < 0)
+      return -1;
 
     return 0;
 }

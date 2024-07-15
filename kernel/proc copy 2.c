@@ -17,7 +17,7 @@ int nextpid = 1;
 
 int static alltickets = 0;
 
-struct spinlock next_lock;
+
 struct spinlock pid_lock;
 struct spinlock tickets_lock;
 
@@ -32,7 +32,7 @@ extern char trampoline[]; // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
-static uint64 next = 1;
+static int next = 1;
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -60,7 +60,6 @@ procinit(void)
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
   initlock(&tickets_lock, "alltickets_lock");
-  initlock(&next_lock, "next lock");
 
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
@@ -314,14 +313,8 @@ fork(void)
   }
   np->sz = p->sz;
 
-
-  acquire(&tickets_lock);
-  acquire(&p->lock);
   np->tickets = p->tickets;
-  alltickets += p->tickets;
   printf("Atributo herdado: %d\n", np->tickets);
-  release(&tickets_lock);
-  release(&p->lock);
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
@@ -347,7 +340,6 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
-  np->ticks = 0;
   release(&np->lock);
 
   return pid;
@@ -406,10 +398,6 @@ exit(int status)
   p->xstate = status;
   p->state = ZOMBIE;
 
-  acquire(&tickets_lock);
-  alltickets -= p->tickets;
-  release(&tickets_lock);
-
   release(&wait_lock);
 
   // Jump into the scheduler, never to return.
@@ -446,9 +434,7 @@ wait(uint64 addr)
             release(&wait_lock);
             return -1;
           }
-      
           freeproc(pp);
-
           release(&pp->lock);
           release(&wait_lock);
           return pid;
@@ -472,7 +458,7 @@ void srandom(int seed) {
   next = seed;
   printf("semente setada para %d", seed);
 }
-/*
+
 int random(void) {
   
   next = next * 12345 + 12345;
@@ -481,20 +467,10 @@ int random(void) {
   }
   return (next / 5536);
 }
-*/
 
-uint64 random(void) {
-  //printf("next é %d\n");
-  //acquire(&next_lock);
-  next = next * 1103515245 + 12345;
-  //release(&next_lock);
-  return (next / 65536) % 32768; // Garante valores positivos
-}
 
-uint64 random_number(int total_tickets){
-  uint64 b = random();
-  //printf("random foi %d", b);
-  return b % total_tickets;
+int random_number(int total_tickets){
+  return random() % total_tickets;
 }
 
 // Per-CPU process scheduler.
@@ -509,40 +485,67 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  
 
+  c->proc = 0;
+
+  acquire(&tickets_lock);
+  printf("total de TICKETS %d\n", alltickets);
+  int picked = random_number(alltickets);
+  printf("picked foi %d\n", picked);
+  release(&tickets_lock);
   for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
+    // Evitar deadlock garantindo que dispositivos possam interromper.
     intr_on();
 
-    acquire(&tickets_lock);
-    //printf("total de TICKETS %d\n", alltickets);
-    uint64 picked = random_number(alltickets);
-    //printf("picked foi %d\n", picked);
-    release(&tickets_lock);
-
-    int already_picked = 0;
+    
+/*
+    // Calcular o total de tickets.
+    int total_tickets = 0;
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
-      if(p->state == RUNNABLE && already_picked == 0) {
-        if (p->tickets > picked){
-          //printf("total de TICKETS %d\n", alltickets);
-          //printf("picked foi %d\n", picked);
+      if(p->state == RUNNABLE) {
+        total_tickets += p->tickets;
+      }
+      release(&p->lock);
+    }
+*/
+
+
+    if (alltickets == 0) {
+      
+      continue; // Se não há processos RUNNABLE, continue a iteração.
+    }
+
+    
+    //int picked = random_number(total_tickets);
+    
+
+    // Encontrar o processo que corresponde ao ticket sorteado.
+    int current_ticket = 0;
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        current_ticket += p->tickets;
+        if (current_ticket > picked) {
+          printf("Total de tickets: %d\n", alltickets);
+          printf("Ticket sorteado: %d\n", picked);
           p->state = RUNNING;
+          p->ticks += 1;
           c->proc = p;
           swtch(&c->context, &p->context);
-          p->ticks += 1;
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
+
+          // O processo terminou de rodar por enquanto.
+          // Ele deve ter alterado seu estado antes de voltar.
           c->proc = 0;
-          already_picked = 1;
+          release(&p->lock);
+          break; // Processo encontrado e executado, sair do loop.
         }
       }
       release(&p->lock);
+    }
 
-    } 
+   
   }
-  
 }
 
 
@@ -782,7 +785,6 @@ settickets(int num)
   
   acquire(&tickets_lock);
   alltickets += diff;
-  printf("SET TICKETS MUDOU ALLTICKETS %d\n", alltickets);
   release(&tickets_lock);
   
   return 0;
