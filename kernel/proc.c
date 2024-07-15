@@ -319,7 +319,6 @@ fork(void)
   acquire(&p->lock);
   np->tickets = p->tickets;
   alltickets += p->tickets;
-  printf("Atributo herdado: %d\n", np->tickets);
   release(&tickets_lock);
   release(&p->lock);
 
