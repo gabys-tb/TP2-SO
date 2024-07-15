@@ -1,3 +1,4 @@
+
 #include "kernel/param.h"
 #include "kernel/types.h"
 #include "kernel/stat.h"
@@ -45,33 +46,26 @@ int main(void)
 
   if ((pid1 = fork()) == 0) {
     // Primeiro processo filho
-    settickets(100); // Atribui 10 tickets
-    while(1) {
-      //busy_wait(100);
-      //sleep(100); // Mantém o processo ocupado
-    }
+    settickets(5); // Atribui 5 tickets
+    
   }
 
   if ((pid2 = fork()) == 0) {
     // Segundo processo filho
-    settickets(200); // Atribui 20 tickets
-    while(1) {
-      //busy_wait(100); // Mantém o processo ocupado
-    }
+    settickets(10); // Atribui 10 tickets
+   
   }
 
   if ((pid3 = fork()) == 0) {
     // Terceiro processo filho
-    settickets(300); // Atribui 30 tickets
-    while(1) {
-      //busy_wait(100); // Mantém o processo ocupado
-    }
+    settickets(15); // Atribui 15 tickets
+   
   }
 
   // Processo pai continua a imprimir estatísticas periodicamente
   for (int i = 0; i < 50; i++) { // Ajuste o número de iterações conforme necessário
     print_stats();
-    sleep(100); // Aguarda um pouco antes de coletar estatísticas novamente
+    sleep(15); // Aguarda um pouco antes de coletar estatísticas novamente
   }
 
   // Código para finalizar os filhos (não deve ser alcançado neste exemplo de teste)

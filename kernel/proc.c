@@ -472,29 +472,14 @@ void srandom(int seed) {
   next = seed;
   printf("semente setada para %d", seed);
 }
-/*
-int random(void) {
-  
-  next = next * 12345 + 12345;
-  if (next < 0){
-    next *= -1;
-  }
-  return (next / 5536);
-}
-*/
 
 uint64 random(void) {
-  //printf("next é %d\n");
-  //acquire(&next_lock);
   next = next * 1103515245 + 12345;
-  //release(&next_lock);
-  return (next / 65536) % 32768; // Garante valores positivos
+  return (next / 65536) % 32768; 
 }
 
 uint64 random_number(int total_tickets){
-  uint64 b = random();
-  //printf("random foi %d", b);
-  return b % total_tickets;
+  return random() % total_tickets;
 }
 
 // Per-CPU process scheduler.
@@ -516,9 +501,9 @@ scheduler(void)
     intr_on();
 
     acquire(&tickets_lock);
-    //printf("total de TICKETS %d\n", alltickets);
+    
     uint64 picked = random_number(alltickets);
-    //printf("picked foi %d\n", picked);
+    
     release(&tickets_lock);
 
     int already_picked = 0;
@@ -526,8 +511,7 @@ scheduler(void)
       acquire(&p->lock);
       if(p->state == RUNNABLE && already_picked == 0) {
         if (p->tickets > picked){
-          //printf("total de TICKETS %d\n", alltickets);
-          //printf("picked foi %d\n", picked);
+          
           p->state = RUNNING;
           c->proc = p;
           swtch(&c->context, &p->context);
