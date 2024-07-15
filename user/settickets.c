@@ -11,11 +11,10 @@ int main(int argc, char *argv[]) {
     
     int tickets = atoi(argv[1]);
 
-    if(tickets <1){
+    if(settickets(tickets) <1){
         printf("Invalid ticket number. Ticket number must be greater than one.\n");
     } else{
-        settickets(tickets);
-        printf("Actual process has been added %d tickets\n", tickets);
+        printf("Actual process has now %d tickets\n", tickets);
     }
     return 0;
 }
